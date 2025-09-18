@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animação de Foto</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1a202c;
+            color: #e2e8f0;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes rotate-subtle {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-50px); }
+            100% { transform: translateY(0); }
+        }
+        
+        @keyframes ripple {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.03);
+            }
+        }
+        
+        @keyframes vibrate {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(-5px);
+            }
+            50% {
+                transform: translateX(5px);
+            }
+            75% {
+                transform: translateX(-5px);
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        @keyframes zoom-center {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes zoom-in {
+            from { transform: scale(1); }
+            to { transform: scale(1.5); }
+        }
+        
+        @keyframes zoom-out {
+            from { transform: scale(1.5); }
+            to { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .animated {
+            animation-duration: 2s;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: infinite;
+        }
+        
+        .animated-once {
+            animation-duration: 5s;
+            animation-timing-function: ease-in-out;
+            animation-iteration-count: 1;
+            animation-fill-mode: forwards;
+        }
+
+        .pulse { animation-name: pulse; }
+        .rotate-subtle { animation-name: rotate-subtle; }
+        .bounce-subtle { animation-name: bounce-subtle; }
+        .ripple { animation-name: ripple; }
+        .vibrate { animation-name: vibrate; }
+        .float { animation-name: float; }
+        .zoom-center { animation-name: zoom-center; }
+        .zoom-in { animation-name: zoom-in; }
+        .zoom-out { animation-name: zoom-out; }
+        .shake { animation-name: shake; }
+
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .chat-container {
+            flex-grow: 1; 
+            overflow-y: auto;
+            min-height: 200px;
+            border-top: 1px solid #4a5568;
+            padding: 1rem;
+        }
+        
+        .img-resized {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .chat-image-container {
+            display: inline-block;
+            position: relative;
+        }
+
+        .chat-download-btn {
+            position: absolute;
+            bottom: 5px;
+            right: 5px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        
+        .chat-action-btn {
+            background-color: #3b82f6;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .chat-action-btn:hover {
+            background-color: #2563eb;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+    <div class="bg-gray-800 p-8 rounded-2xl shadow-xl max-w-xl w-full text-center flex flex-col min-h-[90vh]">
+        <h1 class="text-3xl font-bold mb-4">Animar a sua Foto</h1>
+        <p class="text-gray-400 mb-6">Carregue uma imagem e interaja com ela através do chat.</p>
+
+        <!-- Input para carregar o arquivo -->
+        <input type="file" id="imageInput" accept="image/*" class="mb-6 block w-full text-sm text-gray-400
+            file:mr-4 file:py-2 file:px-4
+            file:rounded-full file:border-0
+            file:text-sm file:font-semibold
+            file:bg-blue-500 file:text-white
+            hover:file:bg-blue-600 cursor-pointer">
+
+        <!-- Área para exibir a imagem com a animação e o tamanho original -->
+        <div class="w-full flex-grow flex items-center justify-center overflow-hidden mb-4">
+            <img id="animatedImage" src="" alt="Imagem animada" class="hidden img-resized object-contain rounded-lg transform transition-transform duration-300">
+            <span id="placeholderText" class="text-gray-500">A sua foto aparecerá aqui.</span>
+        </div>
+
+        <!-- Animation Selector -->
+        <div id="animationSelectorContainer" class="hidden flex flex-col items-center space-y-4 mb-4">
+            <p class="text-gray-400">Escolha uma animação:</p>
+            <div class="flex items-center space-x-2">
+                <select id="animationSelector" class="bg-gray-700 text-white py-2 px-4 rounded-full shadow-lg cursor-pointer">
+                    <option value="">Nenhuma</option>
+                    <option value="pulse">Pulsação</option>
+                    <option value="rotate-subtle">Rotação</option>
+                    <option value="bounce-subtle">Salto</option>
+                    <option value="ripple">Onda</option>
+                    <option value="vibrate">Vibração</option>
+                    <option value="float">Flutuação</option>
+                    <option value="zoom-center">Zoom no Centro (Repetir)</option>
+                    <option value="zoom-in">Zoom In</option>
+                    <option value="zoom-out">Zoom Out</option>
+                    <option value="shake">Tremor (Susto)</option>
+                </select>
+                <button id="downloadVideoBtn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-300 shadow-lg hidden">
+                    Descarregar Animação (Vídeo)
+                </button>
+            </div>
+        </div>
+        
+        <!-- Download and "View Original" button container -->
+        <div id="actionsContainer" class="hidden flex flex-col items-center space-y-4 mb-4">
+            <div class="flex items-center space-x-2">
+                <select id="sizeSelector" class="bg-gray-700 text-white py-2 px-4 rounded-full shadow-lg w-auto text-center">
+                    <option value="original">Original</option>
+                    <option value="square">Instagram Post (1:1)</option>
+                    <option value="vertical">Instagram Stories/Reels (9:16)</option>
+                    <option value="horizontal">YouTube Thumbnail (16:9)</option>
+                </select>
+                <button id="viewOriginalBtn" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-300 shadow-lg">
+                    Ver Foto Original
+                </button>
+            </div>
+        </div>
+        
+        <!-- Chat Interface -->
+        <div id="chatContainer" class="chat-container bg-gray-700 p-4 rounded-lg mb-4">
+            <!-- Chat messages will be dynamically added here -->
+        </div>
+
+        <!-- Chat Input Form -->
+        <form id="chatForm" class="flex items-center space-x-2">
+            <input type="text" id="chatInput" placeholder="Escreva a sua alteração ou pergunta aqui..." class="flex-grow p-3 rounded-lg bg-gray-700 text-white border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="submit" id="sendBtn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-2 px-6 rounded-full transition-colors duration-300 shadow-lg">
+                Enviar
+            </button>
+        </form>
+
+        <div id="errorArea" class="hidden bg-red-600 text-white p-3 rounded-lg w-full text-left mt-4">
+            Ocorreu um erro ao processar a sua foto. Por favor, tente novamente.
+        </div>
+    </div>
+
+    <script>
+        // Get references to HTML elements
+        const imageInput = document.getElementById('imageInput');
+        const animatedImage = document.getElementById('animatedImage');
+        const placeholderText = document.getElementById('placeholderText');
+        const animationSelectorContainer = document.getElementById('animationSelectorContainer');
+        const animationSelector = document.getElementById('animationSelector');
+        const chatContainer = document.getElementById('chatContainer');
+        const chatForm = document.getElementById('chatForm');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const errorArea = document.getElementById('errorArea');
+        const actionsContainer = document.getElementById('actionsContainer');
+        const viewOriginalBtn = document.getElementById('viewOriginalBtn');
+        const sizeSelector = document.getElementById('sizeSelector');
+        const downloadVideoBtn = document.getElementById('downloadVideoBtn');
+        
+        // AQUI: AIzaSyDb3plx2qWe0GIDCA9hVeLdUn-XZOLdJZs
+        const apiKey = "";
+        const imageGenApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+        
+        let currentImageBase64 = null;
+        let originalImageSrc = null;
+        let animationFrameId = null;
+
+        // Function to convert a file to base64
+        const fileToBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = error => reject(error);
+                reader.readAsDataURL(file);
+            });
+        };
+
+        // Function to add a chat message to the UI
+        const addMessageToChat = (text, sender, imageUrl = null, prompt = null) => {
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('flex', 'mb-2', sender === 'user' ? 'justify-end' : 'justify-start');
+            
+            const contentElement = document.createElement('div');
+            contentElement.classList.add('rounded-lg', 'py-2', 'px-4', sender === 'user' ? 'bg-blue-500' : 'bg-gray-600');
+            
+            if (imageUrl) {
+                const imgContainer = document.createElement('div');
+                imgContainer.classList.add('relative', 'chat-image-container', 'mb-2');
+
+                const img = document.createElement('img');
+                img.src = imageUrl;
+                img.alt = sender === 'user' ? 'A sua foto' : 'Foto gerada por IA';
+                img.classList.add('max-w-[200px]', 'rounded-lg');
+                imgContainer.appendChild(img);
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = imageUrl;
+                downloadLink.download = 'foto_editada.jpeg';
+                downloadLink.textContent = 'Download';
+                downloadLink.classList.add('chat-download-btn');
+                imgContainer.appendChild(downloadLink);
+
+                contentElement.appendChild(imgContainer);
+
+                if (prompt) {
+                    const regenerateBtn = document.createElement('button');
+                    regenerateBtn.textContent = 'Refazer';
+                    regenerateBtn.classList.add('chat-action-btn');
+                    regenerateBtn.onclick = () => {
+                        addMessageToChat('A refazer: "' + prompt + '"', 'user');
+                        generateNewImage(prompt);
+                    };
+                    contentElement.appendChild(regenerateBtn);
+                }
+
+            } else {
+                contentElement.textContent = text;
+            }
+            
+            messageElement.appendChild(contentElement);
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom
+        };
+
+        // Function to resize a base64 image using a canvas
+        const resizeImage = (base64Data, width, height, format = 'image/jpeg') => {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const resizedDataUrl = canvas.toDataURL(format);
+                    const resizedBase64 = resizedDataUrl.split(',')[1];
+                    resolve(resizedBase64);
+                };
+                img.onerror = reject;
+                img.src = `data:image/jpeg;base64,${base64Data}`;
+            });
+        };
+
+        // Function to handle the image generation process
+        const generateNewImage = async (prompt) => {
+            if (!currentImageBase64) {
+                errorArea.textContent = 'Por favor, carregue uma imagem primeiro.';
+                errorArea.classList.remove('hidden');
+                return;
+            }
+
+            const selectedSize = sizeSelector.value;
+            let finalPrompt = prompt;
+            let targetWidth, targetHeight;
+
+            switch (selectedSize) {
+                case 'square':
+                    targetWidth = 1080;
+                    targetHeight = 1080;
+                    break;
+                case 'vertical':
+                    targetWidth = 1080;
+                    targetHeight = 1920;
+                    break;
+                case 'horizontal':
+                    targetWidth = 1920;
+                    targetHeight = 1080;
+                    break;
+                case 'original':
+                default:
+                    targetWidth = null;
+                    targetHeight = null;
+                    break;
+            }
+
+            const loadingMsg = document.createElement('div');
+            loadingMsg.classList.add('flex', 'justify-start', 'mb-2');
+            loadingMsg.innerHTML = `<div class="bg-gray-600 rounded-lg py-2 px-4 flex items-center"><div class="spinner"></div><span class="ml-2">A gerar a imagem...</span></div>`;
+            chatContainer.appendChild(loadingMsg);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            try {
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: `Gere uma nova versão desta foto com a seguinte alteração: ${finalPrompt}` },
+                            { inlineData: { mimeType: "image/jpeg", data: currentImageBase64 } }
+                        ]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["IMAGE"]
+                    }
+                };
+            
+                const response = await fetch(imageGenApiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error('Erro na API de Geração de Imagem.');
+                
+                const result = await response.json();
+                const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                
+                if (base64Data) {
+                    let finalBase64Data = base64Data;
+                    if (targetWidth && targetHeight) {
+                        finalBase64Data = await resizeImage(base64Data, targetWidth, targetHeight, 'image/jpeg');
+                    }
+                    
+                    const imageUrl = `data:image/jpeg;base64,${finalBase64Data}`;
+                    addMessageToChat('', 'ai', imageUrl, prompt);
+                    
+                    animatedImage.style.width = targetWidth ? `${targetWidth}px` : 'auto';
+                    animatedImage.style.height = targetHeight ? `${targetHeight}px` : 'auto';
+                    animatedImage.src = imageUrl;
+
+                    actionsContainer.classList.remove('hidden');
+                    viewOriginalBtn.classList.remove('hidden');
+                    animationSelectorContainer.classList.remove('hidden'); 
+                } else {
+                    addMessageToChat('Não foi possível gerar a imagem. Por favor, tente reescrever o seu pedido de forma mais simples e direta.', 'ai');
+                }
+
+            } catch (error) {
+                console.error("Erro ao gerar a nova imagem:", error);
+                addMessageToChat('Ocorreu um erro ao processar a sua foto. Por favor, tente novamente.', 'ai');
+            } finally {
+                if (chatContainer.contains(loadingMsg)) {
+                    chatContainer.removeChild(loadingMsg);
+                }
+            }
+        };
+
+        // Adds an event listener for when a file is selected
+        imageInput.addEventListener('change', async function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                errorArea.classList.add('hidden');
+                const base64 = await fileToBase64(file);
+                originalImageSrc = `data:${file.type};base64,${base64}`;
+                currentImageBase64 = base64;
+
+                animatedImage.src = originalImageSrc;
+                placeholderText.classList.add('hidden');
+                animatedImage.classList.remove('hidden');
+                animationSelectorContainer.classList.remove('hidden');
+                actionsContainer.classList.add('hidden');
+                viewOriginalBtn.classList.add('hidden');
+                
+                chatContainer.innerHTML = '';
+                addMessageToChat('Olá! A foto foi carregada. Agora pode descrever as alterações que quer fazer no chat, ou escolher um efeito de animação no menu acima.', 'ai');
+            }
+        });
+
+        // Event listener for the "Apply Animation" selector
+        animationSelector.addEventListener('change', () => {
+            const selectedAnimation = animationSelector.value;
+            animatedImage.classList.remove('animated', 'animated-once', 'pulse', 'rotate-subtle', 'bounce-subtle', 'ripple', 'vibrate', 'float', 'zoom-center', 'zoom-in', 'zoom-out', 'shake');
+            
+            if (selectedAnimation) {
+                // Set animation properties based on selected effect
+                if (['zoom-in', 'zoom-out'].includes(selectedAnimation)) {
+                    animatedImage.classList.add('animated-once', selectedAnimation);
+                } else {
+                    animatedImage.classList.add('animated', selectedAnimation);
+                }
+                downloadVideoBtn.classList.remove('hidden');
+            } else {
+                downloadVideoBtn.classList.add('hidden');
+            }
+        });
+
+        // Event listener for the chat form submission
+        chatForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const userPrompt = chatInput.value.trim();
+            if (userPrompt) {
+                addMessageToChat(userPrompt, 'user');
+                generateNewImage(userPrompt);
+                chatInput.value = '';
+            } else {
+                errorArea.textContent = 'Por favor, escreva o que quer fazer.';
+                errorArea.classList.remove('hidden');
+            }
+        });
+
+        // Function to start the video recording
+        const startRecording = async () => {
+            const hasAnimation = animatedImage.classList.contains('animated') || animatedImage.classList.contains('animated-once');
+            if (!hasAnimation) {
+                alert('Por favor, aplique uma animação primeiro.');
+                return;
+            }
+
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext('2d');
+                
+                let mediaRecorder;
+                const recordedChunks = [];
+                const animationDuration = 5000;
+                let startTime = Date.now();
+                
+                const selectedAnimation = animationSelector.value;
+
+                const animate = () => {
+                    const elapsedTime = Date.now() - startTime;
+                    const progress = (elapsedTime / animationDuration);
+
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.save();
+                    
+                    // Apply animation transforms to the canvas context
+                    if (selectedAnimation === 'pulse') {
+                        const pulseProgress = (elapsedTime % 2000) / 2000;
+                        const scale = 1 + Math.sin(pulseProgress * Math.PI) * 0.05;
+                        ctx.translate(canvas.width / 2, canvas.height / 2);
+                        ctx.scale(scale, scale);
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+                    } else if (selectedAnimation === 'rotate-subtle') {
+                        const rotateProgress = (elapsedTime % 2000) / 2000;
+                        const rotation = rotateProgress * 360 * (Math.PI / 180);
+                        ctx.translate(canvas.width / 2, canvas.height / 2);
+                        ctx.rotate(rotation);
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+                    } else if (selectedAnimation === 'bounce-subtle') {
+                        const bounceProgress = (elapsedTime % 2000) / 2000;
+                        const bounce = Math.sin(bounceProgress * Math.PI * 2) * -50;
+                        ctx.translate(0, bounce);
+                    } else if (selectedAnimation === 'ripple') {
+                        const rippleProgress = (elapsedTime % 2000) / 2000;
+                        const scale = 1 + Math.sin(rippleProgress * Math.PI) * 0.03;
+                        ctx.translate(canvas.width / 2, canvas.height / 2);
+                        ctx.scale(scale, scale);
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+                    } else if (selectedAnimation === 'vibrate') {
+                        const vibrateProgress = (elapsedTime % 2000) / 2000;
+                        const x = Math.sin(vibrateProgress * Math.PI * 10) * 5;
+                        ctx.translate(x, 0);
+                    } else if (selectedAnimation === 'float') {
+                        const floatProgress = (elapsedTime % 2000) / 2000;
+                        const y = Math.sin(floatProgress * Math.PI) * -20;
+                        ctx.translate(0, y);
+                    } else if (selectedAnimation === 'zoom-center') {
+                        const zoomProgress = (elapsedTime % 2000) / 2000;
+                        const scale = 1 + Math.sin(zoomProgress * Math.PI) * 0.2;
+                        ctx.translate(canvas.width / 2, canvas.height / 2);
+                        ctx.scale(scale, scale);
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+                    } else if (selectedAnimation === 'zoom-in') {
+                        const scale = 1 + Math.min(progress, 1) * 0.5;
+                        ctx.translate(canvas.width / 2, canvas.height / 2);
+                        ctx.scale(scale, scale);
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+                    } else if (selectedAnimation === 'zoom-out') {
+                        const scale = 1.5 - Math.min(progress, 1) * 0.5;
+                        ctx.translate(canvas.width / 2, canvas.height / 2);
+                        ctx.scale(scale, scale);
+                        ctx.translate(-canvas.width / 2, -canvas.height / 2);
+                    } else if (selectedAnimation === 'shake') {
+                        const shakeProgress = (elapsedTime % 200) / 200;
+                        const x = Math.sin(shakeProgress * Math.PI * 10) * 5;
+                        const y = Math.cos(shakeProgress * Math.PI * 10) * 5;
+                        ctx.translate(x, y);
+                    }
+
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    ctx.restore();
+                    
+                    if (elapsedTime < animationDuration) {
+                        animationFrameId = requestAnimationFrame(animate);
+                    }
+                };
+                
+                const stream = canvas.captureStream(60);
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = () => {
+                    cancelAnimationFrame(animationFrameId);
+                    const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const videoUrl = URL.createObjectURL(videoBlob);
+                    
+                    const messageElement = document.createElement('div');
+                    messageElement.classList.add('flex', 'justify-start', 'mb-2');
+                    const contentElement = document.createElement('div');
+                    contentElement.classList.add('bg-gray-600', 'rounded-lg', 'p-2');
+                    contentElement.innerHTML = `
+                        <p class="text-white mb-2">A sua animação em vídeo:</p>
+                        <video class="w-full rounded-lg" controls src="${videoUrl}"></video>
+                        <a href="${videoUrl}" download="animacao.webm" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-1 px-4 rounded-full block text-center mt-2">Descarregar Vídeo</a>
+                    `;
+                    messageElement.appendChild(contentElement);
+                    chatContainer.appendChild(messageElement);
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+
+                    animatedImage.classList.remove('animated', 'animated-once', 'pulse', 'rotate-subtle', 'bounce-subtle', 'ripple', 'vibrate', 'float', 'zoom-center', 'zoom-in', 'zoom-out', 'shake');
+                    animationSelector.value = '';
+                };
+
+                mediaRecorder.start();
+                animate();
+
+                setTimeout(() => {
+                    if (mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                    }
+                }, animationDuration);
+
+                addMessageToChat('A gravar a animação... Por favor, espere um momento.', 'ai');
+            };
+            
+            img.src = animatedImage.src;
+        };
+
+        // Event listener for the new video download button
+        downloadVideoBtn.addEventListener('click', startRecording);
+
+        // Event listener for the "View Original" button
+        viewOriginalBtn.addEventListener('click', () => {
+            if (originalImageSrc) {
+                animatedImage.src = originalImageSrc;
+                animatedImage.style.width = 'auto';
+                animatedImage.style.height = 'auto';
+                actionsContainer.classList.add('hidden');
+                viewOriginalBtn.classList.add('hidden');
+                animationSelectorContainer.classList.remove('hidden');
+                animatedImage.classList.remove('animated', 'animated-once', 'pulse', 'rotate-subtle', 'bounce-subtle', 'ripple', 'vibrate', 'float', 'zoom-center', 'zoom-in', 'zoom-out', 'shake');
+                animationSelector.value = '';
+            }
+        });
+    </script>
+</body>
+</html>
