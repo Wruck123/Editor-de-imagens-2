@@ -348,12 +348,46 @@
             });
         };
 
+        // Function to check for faces using the Gemini API
+        const checkForFaces = async (base64Data) => {
+            const payload = {
+                contents: [{
+                    parts: [
+                        { text: "Existe algum rosto humano nesta imagem? Responda apenas 'sim' ou 'não'." },
+                        { inlineData: { mimeType: "image/jpeg", data: base64Data } }
+                    ]
+                }],
+            };
+
+            const response = await fetch(imageGenApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+            const text = result?.candidates?.[0]?.content?.parts?.[0]?.text?.toLowerCase().trim();
+            return text === 'sim';
+        };
+
         // Function to handle the image generation process
         const generateNewImage = async (prompt) => {
             if (!currentImageBase64) {
                 errorArea.textContent = 'Por favor, carregue uma imagem primeiro.';
                 errorArea.classList.remove('hidden');
                 return;
+            }
+            
+            // Check for face-related prompts and then check if a face exists
+            const facePrompts = ['feliz', 'triste', 'bravo', 'sério'];
+            const isFacePrompt = facePrompts.some(p => prompt.toLowerCase().includes(p));
+
+            if (isFacePrompt) {
+                const hasFace = await checkForFaces(currentImageBase64);
+                if (!hasFace) {
+                    addMessageToChat('Não foi possível fazer esta alteração. Por favor, use uma imagem que tenha um rosto humano.', 'ai');
+                    return;
+                }
             }
 
             const selectedSize = sizeSelector.value;
